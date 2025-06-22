@@ -24,27 +24,46 @@ SIMFormer is a Transformer-based self-supervised framework for super-resolution 
 
 ### Setup
 
-1. Clone the repository:
-```bash
-git clone https://github.com/USTC-SunLab/SIMFormer.git
-cd SIMFormer
-```
-
-2. Create a conda environment:
+1. Create a conda environment:
 ```bash
 conda create -n simformer python=3.12
 conda activate simformer
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. For GPU support, install JAX with CUDA:
+3. For GPU support, install JAX with CUDA:
 ```bash
 pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
+
+### Clone with Git LFS
+
+This repository uses Git LFS to manage large checkpoint files. To clone with all pretrained models:
+
+```bash
+# Install Git LFS (if not already installed)
+git lfs install
+
+# Clone the repository with LFS files
+git clone https://github.com/USTC-SunLab/SIMFormer.git
+cd SIMFormer
+
+# Verify LFS files were downloaded
+git lfs ls-files
+```
+
+If you've already cloned without LFS:
+```bash
+git lfs pull
+```
+
+Note: The repository includes two pretrained checkpoints stored in LFS:
+- `ckpt/pretrain_params.pkl` (325MB) - MAE pretrained model
+- `ckpt/BioSR_pretrain/pretrain_params.pkl` (872MB) - BioSR pretrained model
 
 ## Data Preparation
 
