@@ -358,12 +358,10 @@ def pipeline(args, writer):
             print("epoch=%d/%d"%(epoch+1, args.epoch), "rec=%.2e"%np.array(metrics_eval['rec_loss']))
         else:
             folder = os.path.dirname(args.testset)
-            psf = imread(os.path.join(folder, "..", "psf.tif")).astype(np.float32)
             metrics_eval = {"rec_loss": 0.0}
 
             emitter_nrmse_list = []
             lp_nrmse_list = []
-            psf_nrmse_list = []
             for data in testloader:
                 rng_new, rng = jax.random.split(rng, 2)
                 x = jnp.array(data['img'])
@@ -378,18 +376,13 @@ def pipeline(args, writer):
                 lp_gt = data['lp_gt'].reshape([jax.local_device_count(), -1, *data['lp_gt'].shape[1:]])
                 lp_nrmse = eval_nrmse(res['light_pattern'], lp_gt)
                 lp_nrmse_list.append(lp_nrmse)
-                
-                psf_f = np.squeeze(jax_utils.unreplicate(res['psf']))
-                psf_nrmse = eval_nrmse(psf_f, psf)
-                psf_nrmse_list.append(psf_nrmse)
 
 
             metrics_eval = {k: np.asarray(v / len(testloader)) for k, v in metrics_eval.items()}
             writer.add_scalar('test/rec_loss', metrics_eval['rec_loss'], epoch+1)
             writer.add_scalar('test/emitter_loss', np.mean(emitter_nrmse_list), epoch+1)
             writer.add_scalar('test/light_pattern_loss', np.mean(lp_nrmse_list), epoch+1)
-            writer.add_scalar('test/psf_loss', np.mean(psf_nrmse_list), epoch+1)
-            print("epoch=%d/%d"%(epoch+1, args.epoch), "rec=%.2e"%np.array(metrics_eval['rec_loss']), "emitter=%.2e"%np.mean(emitter_nrmse_list), "light_pattern=%.2e"%np.mean(lp_nrmse_list), "psf=%.2e"%np.mean(psf_nrmse_list))
+            print("epoch=%d/%d"%(epoch+1, args.epoch), "rec=%.2e"%np.array(metrics_eval['rec_loss']), "emitter=%.2e"%np.mean(emitter_nrmse_list), "light_pattern=%.2e"%np.mean(lp_nrmse_list))
             
         # tensorboard 
         res = jax_utils.unreplicate(res)
