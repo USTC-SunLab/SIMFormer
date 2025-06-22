@@ -39,6 +39,8 @@ parser.add_argument('--resume_s1_path', type=str, default=None)
 parser.add_argument('--resume_s1_iter', type=str, default=None)
 parser.add_argument('--not_resume_s1_opt', action='store_true')
 parser.add_argument('--resume', action='store_true')
+parser.add_argument('--resume_pickle', type=str, default=None, 
+                   help='Path to BioSR pretrained pickle checkpoint')
 
 # Loss weights
 parser.add_argument('--tv_loss', type=float, default=1e-3)

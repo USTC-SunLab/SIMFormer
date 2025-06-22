@@ -243,6 +243,23 @@ def pipeline(args, writer):
         print(f"\033[93mNote: patch_embed and pos_embed were excluded and will be re-initialized\033[0m")
         state = state.replace(params=variables)
     
+    if args.resume_pickle is not None and not args.resume:
+        print(f"\033[94mLoading BioSR pretrained checkpoint from: {args.resume_pickle}\033[0m")
+        with open(args.resume_pickle, 'rb') as f:
+            biosr_pretrain = pickle.load(f)
+        
+        # BioSR pretrained checkpoints have 'params' and optionally 'batch_stats'
+        if 'params' not in biosr_pretrain:
+            raise ValueError(f"Invalid BioSR pretrained checkpoint format. Expected 'params' key, got: {list(biosr_pretrain.keys())}")
+        
+        # Load params
+        state = state.replace(params=biosr_pretrain['params'])
+        
+        # Load batch_stats if available
+        if 'batch_stats' in biosr_pretrain:
+            state = state.replace(batch_stats=biosr_pretrain['batch_stats'])
+        
+        print("\033[92mSuccessfully loaded pretrained model\033[0m")
     
     if args.resume_s1_path is not None:
         checkpoint_dir = os.path.abspath(os.path.join(args.resume_s1_path, "state"))

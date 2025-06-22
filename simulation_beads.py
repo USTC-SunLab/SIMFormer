@@ -64,8 +64,6 @@ def generate_beads_sim(params):
     
     # Resize to target size
     raw = resize(raw, (raw.shape[0], raw.shape[1], params['W'], params['W']))
-    beads = resize(beads, (params['W'], params['W']))
-    patterns = resize(patterns, (patterns.shape[0], patterns.shape[1], params['W'], params['W']))
     
     # Add noise
     raw_std = raw / raw.std()
