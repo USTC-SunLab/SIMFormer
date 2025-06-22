@@ -35,6 +35,8 @@ env/
 # Data and outputs
 data/
 ckpt*/
+!ckpt/BioSR_pretrain/
+!ckpt/pretrain_params.pkl
 result*/
 results/
 *.tif
@@ -56,7 +58,8 @@ checkpoints/
 *.ckpt
 *.pth
 *.pkl
-pretrain_params.pkl
+!ckpt/BioSR_pretrain/*.pkl
+!ckpt/pretrain_params.pkl
 
 # Jupyter Notebook
 .ipynb_checkpoints/
