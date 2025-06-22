@@ -9,10 +9,10 @@ SIMFormer is a Transformer-based self-supervised framework for super-resolution 
 - **Super-resolution beyond conventional limits**: Achieves ~45 nm resolution, approaching STORM-level detail
 - **Self-supervised learning**: No ground truth high-resolution images required
 - **Blind reconstruction**: Simultaneously estimates all imaging parameters
-- **Noise robustness**: SIMFormer+ variant maintains quality at low photon counts
+- **Noise robustness**: SIMFormer+ self-distillation enhances robustness through noise-augmented training
 - **Adaptable**: One-stack fine-tuning for new microscopes or sample types
 - **Fast inference**: Real-time reconstruction capability
-- **Self-distillation (SIMFormer+)**: Train lightweight models using SIMFormer outputs for 3-5x faster inference
+- **Self-distillation (SIMFormer+)**: Enhanced noise robustness through training on denoised SIMFormer outputs
 
 ## Installation
 
@@ -193,14 +193,14 @@ Common use cases:
 
 ## Self-Distillation (SIMFormer+)
 
-SIMFormer+ uses knowledge distillation to create faster, lightweight models while maintaining reconstruction quality. The distillation process trains a simplified network using SIMFormer's high-quality outputs as pseudo ground-truth.
+SIMFormer+ uses knowledge distillation to enhance robustness to noise and imaging artifacts. The distillation process trains a simplified network using SIMFormer's high-quality, denoised outputs as pseudo ground-truth, with aggressive noise augmentation during training.
 
 ### Key Advantages
 
-- **3-5x faster inference**: Simplified architecture without physics simulation
-- **Reduced memory usage**: Only predicts emitter, not all imaging parameters  
-- **Maintained quality**: Learns from denoised SIMFormer predictions
-- **Easy deployment**: Lighter models suitable for real-time applications
+- **Enhanced noise robustness**: Trained with Gaussian and shot noise augmentation to handle low-photon conditions
+- **Robust denoising**: Learns from SIMFormer's high-quality reconstructions as denoising targets
+- **Maintains quality at low SNR**: Effective reconstruction even with significant noise
+- **Simplified architecture**: Focuses computational resources on robust emitter reconstruction
 
 ### Distillation Workflow
 
@@ -219,67 +219,7 @@ SIMFormer+ uses knowledge distillation to create faster, lightweight models whil
    bash script/test_distillation.sh
    ```
 
-### Example: BioSR Distillation
-
-```bash
-# Step 1: Ensure SIMFormer predictions exist
-# Expected structure: ./results/BioSR/test/*.tif
-
-# Step 2: Train distillation model
-CUDA_VISIBLE_DEVICES=0,1,2,3 python train_distillation.py \
-    --trainset="./data/BioSR/*/2D/train/*.tif" \
-    --testset="./data/BioSR/*/2D/test/*.tif" \
-    --simformer_infer_save_dir="./results/BioSR" \
-    --batchsize=36 \
-    --lr=1e-4 \
-    --epoch=1000 \
-    --mask_ratio=0.0 \
-    --save_dir="./ckpt/distillation/BioSR" \
-    --patch_size 3 16 16 \
-    --rescale 3 3 \
-    --lrc=32
-
-# Step 3: Fast inference
-CUDA_VISIBLE_DEVICES=0 python test_distillation.py \
-    --data_dir="./data/BioSR/*/2D/test/*.tif" \
-    --resume_path="./ckpt/distillation/BioSR/..." \
-    --save_dir="./results/distillation/BioSR"
-```
-
-### When to Use Distillation
-
-- **Real-time processing**: When inference speed is critical
-- **Resource constraints**: Limited GPU memory or compute
-- **Production deployment**: Lighter models for edge devices
-- **Batch processing**: Large datasets where speed matters
-
 Note: Distillation models only output the super-resolved emitter image, not the full reconstruction (patterns, background, PSF) available in standard SIMFormer.
-
-## Model Architecture
-
-### Core Components
-
-1. **Masked Autoencoder (MAE)**
-   - Vision Transformer (ViT-Base) with 3D patch embedding
-   - 12 transformer layers with adapter modules
-   - Random masking ratio: 25-75%
-
-2. **Physics-informed Decoders**
-   - **Emitter Decoder**: CNN upsampling with Softplus activation
-   - **Illumination Pattern Decoder**: Low-rank coding (LRC) with Softmax
-   - **Background Decoder**: Coarse pooling for spatial smoothness
-
-3. **PSF Estimation**
-   - Deep Image Prior approach with random noise input
-   - Convolutional network outputting PSF kernel
-
-### Loss Functions
-
-Total loss combines multiple components:
-- **Reconstruction Loss**: 0.875×L1 + 0.125×MS-SSIM
-- **Total Variation**: Smoothness on patterns and PSF
-- **Hessian Loss**: Continuity prior for emitters
-- **PSF Centering**: Prevents PSF drift
 
 ## Repository Structure
 
@@ -291,6 +231,7 @@ SIMFormer/
 ├── network.py            # Neural network architectures
 ├── simulation_np.py      # SIM simulation utilities
 ├── simulation_beads.py   # Bead simulation for testing
+├── BioSR_preprocess.py   # BioSR dataset preprocessing
 ├── train_distillation.py # Self-distillation training
 ├── test_distillation.py  # Distillation inference
 ├── model_distillation.py # Distillation pipeline
@@ -306,7 +247,12 @@ SIMFormer/
 │   ├── train_distillation_biosr.sh
 │   ├── train_distillation_simulate.sh
 │   └── test_distillation.sh
-├── utils_*.py            # Utility functions
+├── utils_data.py         # Data loading and preprocessing
+├── utils_eval.py         # Evaluation metrics
+├── utils_huggingface_jax.py  # HuggingFace model loading
+├── utils_imageJ.py       # ImageJ-compatible TIFF I/O
+├── utils_metrics.py      # Loss functions and metrics
+├── utils_net.py          # Network utility functions
 ├── requirements.txt      # Package dependencies
 └── README.md            # This file
 ```
