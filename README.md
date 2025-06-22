@@ -12,6 +12,7 @@ SIMFormer is a Transformer-based self-supervised framework for super-resolution 
 - **Noise robustness**: SIMFormer+ variant maintains quality at low photon counts
 - **Adaptable**: One-stack fine-tuning for new microscopes or sample types
 - **Fast inference**: Real-time reconstruction capability
+- **Self-distillation (SIMFormer+)**: Train lightweight models using SIMFormer outputs for 3-5x faster inference
 
 ## Installation
 
@@ -25,7 +26,7 @@ SIMFormer is a Transformer-based self-supervised framework for super-resolution 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/SIMFormer.git
+git clone https://github.com/USTC-SunLab/SIMFormer.git
 cd SIMFormer
 ```
 
@@ -83,7 +84,7 @@ Key features:
 For comprehensive testing and validation, use the main simulation tool:
 
 ```bash
-python simulation_np.py --output_prefix ../data/SIM-simulation
+python simulation_np.py --output_prefix ./data/SIM-simulation
 ```
 
 This generates synthetic SIM datasets with train/test splits for three structure types:
@@ -98,7 +99,7 @@ Each structure type is generated with variations in:
 
 Output structure:
 ```
-../data/SIM-simulation/
+./data/SIM-simulation/
 ├── curve/
 │   ├── light_pattern_period/
 │   ├── ave_photon/
@@ -146,7 +147,7 @@ SIMFormer employs an 8-stage progressive training strategy. To train the model, 
 bash script/train_BioSR_sunlab.sh
 ```
 
-This script automatically handles all 8 stages of training with the appropriate curriculum learning schedule, progressively refining the model from initial feature learning to final robustness training.
+This script automatically handles all stages of training with the appropriate curriculum learning schedule, progressively refining the model from initial feature learning to final robustness training.
 
 ### Inference
 
@@ -168,27 +169,91 @@ bash script/finetune.sh
 
 The script includes configurations for fine-tuning on various datasets including beads, specific organelles, and different microscope systems. It demonstrates both single-stage and multi-stage fine-tuning approaches.
 
-### Z-dimension Adaptation
+### Pattern Dimension Adaptation
 
-SIMFormer is trained on standard 9-frame SIM data (3 angles × 3 phases). When working with datasets that have different Z-dimensions, use the `--adapt_z_dimension` flag:
+SIMFormer is trained on standard 9-frame SIM data (3 angles × 3 phases). When working with datasets that have different pattern dimensions, use the `--adapt_pattern_dimension` flag:
 
 ```bash
 python train.py \
     --trainset /path/to/data \
-    --adapt_z_dimension \
-    --target_z_frames 9 \
+    --adapt_pattern_dimension \
+    --target_pattern_frames 9 \
     ...
 ```
 
 This feature:
-- **Adapts** any input Z-dimension to match the model's expected 9 frames
+- **Adapts** any input pattern dimension to match the model's expected 9 frames
 - **Preserves** model architecture compatibility without modification
-- **Samples** frames uniformly (default) or randomly from the Z-stack
+- **Samples** patterns uniformly (default) or randomly from the pattern stack
 
 Common use cases:
-- **Open-3DSIM dataset**: May have varying Z-dimensions
-- **SIMtoolbox data**: Often contains different numbers of frames  
-- **Custom microscopy data**: Adapt any Z-dimension to model requirements
+- **Open-3DSIM dataset**: May have varying pattern dimensions
+- **SIMtoolbox data**: Often contains different numbers of patterns  
+- **Custom microscopy data**: Adapt any pattern dimension to model requirements
+
+## Self-Distillation (SIMFormer+)
+
+SIMFormer+ uses knowledge distillation to create faster, lightweight models while maintaining reconstruction quality. The distillation process trains a simplified network using SIMFormer's high-quality outputs as pseudo ground-truth.
+
+### Key Advantages
+
+- **3-5x faster inference**: Simplified architecture without physics simulation
+- **Reduced memory usage**: Only predicts emitter, not all imaging parameters  
+- **Maintained quality**: Learns from denoised SIMFormer predictions
+- **Easy deployment**: Lighter models suitable for real-time applications
+
+### Distillation Workflow
+
+1. **Generate SIMFormer predictions**: Run standard SIMFormer inference on your dataset
+   ```bash
+   bash script/test.sh  # Outputs saved to ./results/
+   ```
+
+2. **Train distillation model**: Use SIMFormer outputs as training targets
+   ```bash
+   bash script/train_distillation_biosr.sh
+   ```
+
+3. **Run fast inference**: Process new data with the distilled model
+   ```bash
+   bash script/test_distillation.sh
+   ```
+
+### Example: BioSR Distillation
+
+```bash
+# Step 1: Ensure SIMFormer predictions exist
+# Expected structure: ./results/BioSR/test/*.tif
+
+# Step 2: Train distillation model
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_distillation.py \
+    --trainset="./data/BioSR/*/2D/train/*.tif" \
+    --testset="./data/BioSR/*/2D/test/*.tif" \
+    --simformer_infer_save_dir="./results/BioSR" \
+    --batchsize=36 \
+    --lr=1e-4 \
+    --epoch=1000 \
+    --mask_ratio=0.0 \
+    --save_dir="./ckpt/distillation/BioSR" \
+    --patch_size 3 16 16 \
+    --rescale 3 3 \
+    --lrc=32
+
+# Step 3: Fast inference
+CUDA_VISIBLE_DEVICES=0 python test_distillation.py \
+    --data_dir="./data/BioSR/*/2D/test/*.tif" \
+    --resume_path="./ckpt/distillation/BioSR/..." \
+    --save_dir="./results/distillation/BioSR"
+```
+
+### When to Use Distillation
+
+- **Real-time processing**: When inference speed is critical
+- **Resource constraints**: Limited GPU memory or compute
+- **Production deployment**: Lighter models for edge devices
+- **Batch processing**: Large datasets where speed matters
+
+Note: Distillation models only output the super-resolved emitter image, not the full reconstruction (patterns, background, PSF) available in standard SIMFormer.
 
 ## Model Architecture
 
@@ -208,16 +273,6 @@ Common use cases:
    - Deep Image Prior approach with random noise input
    - Convolutional network outputting PSF kernel
 
-### Training Strategy
-
-The model employs curriculum learning with progressive stages:
-
-| Stage | Mask Ratio | LRC Rank | Key Focus |
-|-------|------------|----------|-----------| 
-| 1-5   | 0.75→0.25  | 512→32   | Feature learning |
-| 6-7   | 0.25       | 32       | Refinement |
-| 8     | 0.75       | 32       | Robustness |
-
 ### Loss Functions
 
 Total loss combines multiple components:
@@ -236,6 +291,10 @@ SIMFormer/
 ├── network.py            # Neural network architectures
 ├── simulation_np.py      # SIM simulation utilities
 ├── simulation_beads.py   # Bead simulation for testing
+├── train_distillation.py # Self-distillation training
+├── test_distillation.py  # Distillation inference
+├── model_distillation.py # Distillation pipeline
+├── network_distillation.py # Simplified network for distillation
 ├── jax_mae/              # Masked autoencoder implementation
 │   ├── mae.py
 │   ├── vision_transformer.py
@@ -243,7 +302,10 @@ SIMFormer/
 ├── script/               # Training and evaluation scripts
 │   ├── train_BioSR_sunlab.sh
 │   ├── finetune.sh
-│   └── test.sh
+│   ├── test.sh
+│   ├── train_distillation_biosr.sh
+│   ├── train_distillation_simulate.sh
+│   └── test_distillation.sh
 ├── utils_*.py            # Utility functions
 ├── requirements.txt      # Package dependencies
 └── README.md            # This file

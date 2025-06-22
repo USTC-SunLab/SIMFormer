@@ -1,8 +1,8 @@
 gpu="0,1,2,3,4,5,6"
 path="./ckpt/BioSR"
 
-trainset="./data/SIM-simulation/beads/train/*.tif"
-testset="./data/SIM-simulation/beads/train/*.tif"
+trainset="./data/SIM-simulation/beads/standard/*/*.tif"
+testset="./data/SIM-simulation/beads/standard/*/*.tif"
 save_dir="./ckpt/finetune/beads"
 
 
@@ -71,9 +71,9 @@ save_dir="./ckpt/finetune/Open-3DSIM"
 #         --crop_size 80 80 \
 #         --psf_size 49 49 \
 #         --lrc=32 \
-#         --adapt_z_dimension \
-#         --target_z_frames=9 \
-#         --random_z_sampling \
+#         --adapt_pattern_dimension \
+#         --target_pattern_frames=9 \
+#         --random_pattern_sampling \
 #         --not_resume_s1_opt 2>&1 | tee training_log.txt
 
 fs1_path="./ckpt/finetune/Open-3DSIM/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.25--lrc=32--s1"
@@ -95,9 +95,9 @@ fs1_path="./ckpt/finetune/Open-3DSIM/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask
 #         --crop_size 80 80 \
 #         --psf_size 49 49 \
 #         --lrc=32 \
-#         --adapt_z_dimension \
-#         --target_z_frames=9 \
-#         --random_z_sampling \
+#         --adapt_pattern_dimension \
+#         --target_pattern_frames=9 \
+#         --random_pattern_sampling \
 #         --not_resume_s1_opt 2>&1 | tee training_log.txt
 
 

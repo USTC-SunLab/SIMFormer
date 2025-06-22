@@ -10,45 +10,45 @@ import pdb
 
 
 
-def adapt_z_dimension_frames(data, target_z_frames=9, random=False):
-    """Adapt Z-dimension to match model's expected input.
+def adapt_pattern_dimension_frames(data, target_pattern_frames=9, random=False):
+    """Adapt pattern dimension to match model's expected input.
     
     SIMFormer expects 9-frame input (3 angles × 3 phases), but datasets
-    may have varying Z-dimensions. This function adapts the Z-dimension
+    may have varying pattern dimensions. This function adapts the pattern dimension
     to ensure model compatibility.
     
     Args:
-        data: Input with shape (c, z, y, x) where z may vary
-        target_z_frames: Target number of frames (default: 9 for standard SIM)
-        random: If True, randomly sample frames; if False, uniformly sample
+        data: Input with shape (c, patterns, y, x) where patterns may vary
+        target_pattern_frames: Target number of patterns (default: 9 for standard SIM)
+        random: If True, randomly sample patterns; if False, uniformly sample
     
     Returns:
-        Data with shape (c, target_z_frames, y, x)
+        Data with shape (c, target_pattern_frames, y, x)
     """
-    assert len(data.shape) == 4, "Input data must have 4 dimensions (c, z, y, x)"
-    c, z, y, x = data.shape
+    assert len(data.shape) == 4, "Input data must have 4 dimensions (c, patterns, y, x)"
+    c, patterns, y, x = data.shape
     
-    if z <= target_z_frames:
+    if patterns <= target_pattern_frames:
         return data
     
     if random:
-        indices = np.random.choice(z, size=target_z_frames, replace=False)
+        indices = np.random.choice(patterns, size=target_pattern_frames, replace=False)
         indices.sort()
     else:
-        step = (z - 1) // (target_z_frames - 1) if target_z_frames > 1 else 1
-        if step * (target_z_frames - 1) + 1 <= z:
-            indices = [i * step for i in range(target_z_frames)]
+        step = (patterns - 1) // (target_pattern_frames - 1) if target_pattern_frames > 1 else 1
+        if step * (target_pattern_frames - 1) + 1 <= patterns:
+            indices = [i * step for i in range(target_pattern_frames)]
         else:
-            indices = np.linspace(0, z-1, target_z_frames, dtype=int)
+            indices = np.linspace(0, patterns-1, target_pattern_frames, dtype=int)
     
     extracted_data = data[:, indices, :, :]
     return extracted_data
 
 def multi_channel_random_crop(data, crop_size):
-    assert len(data.shape) == 4, "Input data must have 4 dimensions (c, z, y, x)"
-    assert all(crop_size[i] <= data.shape[i+2] for i in range(2)), "Crop size must be smaller or equal to data dimensions (z, y, x)"
+    assert len(data.shape) == 4, "Input data must have 4 dimensions (c, patterns, y, x)"
+    assert all(crop_size[i] <= data.shape[i+2] for i in range(2)), "Crop size must be smaller or equal to data dimensions (patterns, y, x)"
     
-    c, z, y, x = data.shape
+    c, patterns, y, x = data.shape
     crop_y, crop_x = crop_size
 
     start_y = np.random.randint(0, y - crop_y + 1)
@@ -60,9 +60,9 @@ def multi_channel_random_crop(data, crop_size):
 
 def multi_image_multi_channel_random_crop(data_list, crop_size):
     for data in data_list:
-        assert len(data.shape) == 4, "Input data must have 4 dimensions (c, z, y, x)"
+        assert len(data.shape) == 4, "Input data must have 4 dimensions (c, patterns, y, x)"
     
-    c, z, y, x = data_list[0].shape
+    c, patterns, y, x = data_list[0].shape
     crop_y, crop_x = crop_size
 
     start_y = np.random.randint(0, y - crop_y + 1)
@@ -91,11 +91,11 @@ class dataset_3d(torch.utils.data.Dataset):
         use_gt: Whether to load ground truth
         sampling_rate: Fraction of files to use
         patch_size_z: Z-dimension patch size
-        adapt_z_dimension: Enable Z-dimension adaptation for model compatibility
-        target_z_frames: Target Z-dimension size (default: 9 for standard SIM)
-        random_z_sampling: Use random sampling instead of uniform for Z-dimension
+        adapt_pattern_dimension: Enable pattern dimension adaptation for model compatibility
+        target_pattern_frames: Target pattern dimension size (default: 9 for standard SIM)
+        random_pattern_sampling: Use random sampling instead of uniform for pattern dimension
     """
-    def __init__(self, dataset, crop_size, minimum_number=None, use_gt=False, sampling_rate=1, patch_size_z=1, adapt_z_dimension=False, target_z_frames=9, random_z_sampling=False):
+    def __init__(self, dataset, crop_size, minimum_number=None, use_gt=False, sampling_rate=1, patch_size_z=1, adapt_pattern_dimension=False, target_pattern_frames=9, random_pattern_sampling=False):
         super().__init__()
         files_path = glob.glob(dataset)
         files_path = np.random.permutation(files_path)
@@ -104,9 +104,9 @@ class dataset_3d(torch.utils.data.Dataset):
         self.files_pool = []
         self.use_gt = use_gt
         self.patch_size_z = patch_size_z
-        self.adapt_z_dimension = adapt_z_dimension
-        self.target_z_frames = target_z_frames
-        self.random_z_sampling = random_z_sampling
+        self.adapt_pattern_dimension = adapt_pattern_dimension
+        self.target_pattern_frames = target_pattern_frames
+        self.random_pattern_sampling = random_pattern_sampling
 
         
         for file in tqdm.tqdm(files_path):
@@ -152,8 +152,8 @@ class dataset_3d(torch.utils.data.Dataset):
         
         processed_files = []
         for file_item in files:
-            if self.adapt_z_dimension and file_item.shape[1] > self.target_z_frames:
-                processed_item = adapt_z_dimension_frames(file_item, self.target_z_frames, random=self.random_z_sampling)
+            if self.adapt_pattern_dimension and file_item.shape[1] > self.target_pattern_frames:
+                processed_item = adapt_pattern_dimension_frames(file_item, self.target_pattern_frames, random=self.random_pattern_sampling)
                 processed_files.append(processed_item)
             else:
                 processed_files.append(file_item)
@@ -177,7 +177,7 @@ class dataset_3d(torch.utils.data.Dataset):
 
 class dataset_3d_supervised(torch.utils.data.Dataset):
     # Supervised dataset for 3D data
-    def __init__(self, dataset, crop_size, minimum_number=None, use_gt=False, sampling_rate=1, adapt_z_dimension=False, target_z_frames=9, random_z_sampling=False):
+    def __init__(self, dataset, crop_size, minimum_number=None, use_gt=False, sampling_rate=1, adapt_pattern_dimension=False, target_pattern_frames=9, random_pattern_sampling=False):
         super().__init__()
         files_path = glob.glob(dataset)
         files_path = np.random.permutation(files_path)
@@ -185,9 +185,9 @@ class dataset_3d_supervised(torch.utils.data.Dataset):
         self.crop_size = crop_size
         self.files_pool = []
         self.use_gt = use_gt
-        self.adapt_z_dimension = adapt_z_dimension
-        self.target_z_frames = target_z_frames
-        self.random_z_sampling = random_z_sampling
+        self.adapt_pattern_dimension = adapt_pattern_dimension
+        self.target_pattern_frames = target_pattern_frames
+        self.random_pattern_sampling = random_pattern_sampling
 
         
         for file in tqdm.tqdm(files_path):
@@ -231,8 +231,8 @@ class dataset_3d_supervised(torch.utils.data.Dataset):
         
         processed_files = []
         for file_item in files:
-            if self.adapt_z_dimension and file_item.shape[1] > self.target_z_frames:
-                processed_item = adapt_z_dimension_frames(file_item, self.target_z_frames, random=self.random_z_sampling)
+            if self.adapt_pattern_dimension and file_item.shape[1] > self.target_pattern_frames:
+                processed_item = adapt_pattern_dimension_frames(file_item, self.target_pattern_frames, random=self.random_pattern_sampling)
                 processed_files.append(processed_item)
             else:
                 processed_files.append(file_item)
@@ -255,17 +255,17 @@ class dataset_3d_supervised(torch.utils.data.Dataset):
         
 
 class dataset_3d_infer(torch.utils.data.Dataset):
-    def __init__(self, image, crop_size, rescale, patch_size_z=1, adapt_z_dimension=False, target_z_frames=9, random_z_sampling=False):
+    def __init__(self, image, crop_size, rescale, patch_size_z=1, adapt_pattern_dimension=False, target_pattern_frames=9, random_pattern_sampling=False):
         super().__init__()
         self.overlap = [16, 16]
         self.crop_size = [crop_size[i] - self.overlap[i] * 2 for i in range(len(crop_size))]
         self.rescale = rescale
         self.patch_size_z = patch_size_z
-        self.adapt_z_dimension = adapt_z_dimension
-        self.target_z_frames = target_z_frames
-        self.random_z_sampling = random_z_sampling
-        if self.adapt_z_dimension and image.shape[1] > self.target_z_frames:
-            self.image = adapt_z_dimension_frames(image, self.target_z_frames, random=self.random_z_sampling)
+        self.adapt_pattern_dimension = adapt_pattern_dimension
+        self.target_pattern_frames = target_pattern_frames
+        self.random_pattern_sampling = random_pattern_sampling
+        if self.adapt_pattern_dimension and image.shape[1] > self.target_pattern_frames:
+            self.image = adapt_pattern_dimension_frames(image, self.target_pattern_frames, random=self.random_pattern_sampling)
         else:
             self.image = image
             

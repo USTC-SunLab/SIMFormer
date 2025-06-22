@@ -18,12 +18,12 @@ parser.add_argument('--trainset', type=str, default="../data/3D")
 parser.add_argument('--testset', type=str, default="../data/3D")
 parser.add_argument('--min_datasize', type=int, default=18000)
 parser.add_argument('--sampling_rate', type=float, default=1.0)
-parser.add_argument('--adapt_z_dimension', action='store_true',
-                    help='Adapt Z-dimension for model compatibility when data has different Z-dimension than training (9 frames)')
-parser.add_argument('--target_z_frames', type=int, default=9,
-                    help='Target Z-dimension size (default: 9 for standard SIM with 3 angles × 3 phases)')
-parser.add_argument('--random_z_sampling', action='store_true',
-                    help='Use random sampling instead of uniform for Z-dimension adaptation')
+parser.add_argument('--adapt_pattern_dimension', action='store_true',
+                    help='Adapt pattern dimension for model compatibility when data has different pattern dimension than training (9 frames)')
+parser.add_argument('--target_pattern_frames', type=int, default=9,
+                    help='Target pattern dimension size (default: 9 for standard SIM with 3 angles × 3 phases)')
+parser.add_argument('--random_pattern_sampling', action='store_true',
+                    help='Use random sampling instead of uniform for pattern dimension adaptation')
 
 # Training
 parser.add_argument('--batchsize', type=int, default=18)
@@ -32,8 +32,6 @@ parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--add_noise', type=float, default=0.1)
 parser.add_argument('--use_gt', action='store_true')
 parser.add_argument('--accumulation_step', type=int, default=None)
-parser.add_argument('--use_mp', action='store_true')
-parser.add_argument('--use_remat', action='store_true')
 
 # Resume
 parser.add_argument('--resume_pretrain', action='store_true')

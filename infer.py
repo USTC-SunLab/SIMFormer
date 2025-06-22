@@ -10,12 +10,12 @@ parser = argparse.ArgumentParser(description='Super-resolved microscopy via phys
 parser.add_argument('--crop_size', nargs='+', type=int, default=[80, 80])
 parser.add_argument('--data_dir', type=str, default="../data/")
 parser.add_argument('--gt', action='store_true')
-parser.add_argument('--adapt_z_dimension', action='store_true', 
-                    help="Adapt Z-dimension for model compatibility when data has different Z-dimension than training (9 frames)")
-parser.add_argument('--target_z_frames', type=int, default=9, 
-                    help="Target Z-dimension size (default: 9 for standard SIM with 3 angles × 3 phases)")
-parser.add_argument('--random_z_sampling', action='store_true', 
-                    help="Use random sampling instead of uniform for Z-dimension adaptation")
+parser.add_argument('--adapt_pattern_dimension', action='store_true', 
+                    help="Adapt pattern dimension for model compatibility when data has different pattern dimension than training (9 frames)")
+parser.add_argument('--target_pattern_frames', type=int, default=9, 
+                    help="Target pattern dimension size (default: 9 for standard SIM with 3 angles × 3 phases)")
+parser.add_argument('--random_pattern_sampling', action='store_true', 
+                    help="Use random sampling instead of uniform for pattern dimension adaptation")
 ##################################### Inferring setting #################################################
 parser.add_argument('--batchsize', type=int, default=1)
 parser.add_argument('--resume_path', type=str, default=None)

@@ -10,22 +10,22 @@ epochs=70
 initial_lrc=512
 lrc=$initial_lrc
 
-# CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-#         --trainset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --testset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --batchsize=96 \
-#         --lr=$lr \
-#         --min_datasize=50000 \
-#         --epoch=$epochs \
-#         --mask_ratio=0.75 \
-#         --add_noise=1.0 \
-#         --resume_pretrain \
-#         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
-#         --patch_size 3 16 16 \
-#         --rescale 3 3 \
-#         --crop_size 80 80 \
-#         --psf_size 49 49 \
-#         --lrc=$lrc
+CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
+        --trainset="./data/BioSR/*/2D/gt/*.tif" \
+        --testset="./data/BioSR/*/2D/gt/*.tif" \
+        --batchsize=96 \
+        --lr=$lr \
+        --min_datasize=50000 \
+        --epoch=$epochs \
+        --mask_ratio=0.75 \
+        --add_noise=1.0 \
+        --resume_pretrain \
+        --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
+        --patch_size 3 16 16 \
+        --rescale 3 3 \
+        --crop_size 80 80 \
+        --psf_size 49 49 \
+        --lrc=$lrc
 
 # Stages 2-5: Progressive LRC reduction
 epochs=30
@@ -41,109 +41,46 @@ while [ $lrc -gt $end_lrc ]; do
         mask_ratio=0.25
     fi
     
-    # CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-    #         --trainset="../Data/BioSR/*/2D/gt/*.tif" \
-    #         --testset="../Data/BioSR/*/2D/gt/*.tif" \
-    #         --batchsize=64 \
-    #         --lr=$lr \
-    #         --min_datasize=50000 \
-    #         --epoch=$epochs \
-    #         --mask_ratio=0.25 \
-    #         --add_noise=1.0 \
-    #         --resume_pretrain \
-    #         --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=${mask_ratio}--lrc=${lrc}--s${s_value}" \
-    #         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
-    #         --patch_size 3 16 16 \
-    #         --rescale 3 3 \
-    #         --crop_size 80 80 \
-    #         --psf_size 49 49 \
-    #         --lrc=$next_lrc \
-    #         --not_resume_s1_opt \
-    #         --resume
+    CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
+            --trainset="./data/BioSR/*/2D/gt/*.tif" \
+            --testset="./data/BioSR/*/2D/gt/*.tif" \
+            --batchsize=64 \
+            --lr=$lr \
+            --min_datasize=50000 \
+            --epoch=$epochs \
+            --mask_ratio=0.25 \
+            --add_noise=1.0 \
+            --resume_pretrain \
+            --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=${mask_ratio}--lrc=${lrc}--s${s_value}" \
+            --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
+            --patch_size 3 16 16 \
+            --rescale 3 3 \
+            --crop_size 80 80 \
+            --psf_size 49 49 \
+            --lrc=$next_lrc \
+            --not_resume_s1_opt \
+            --resume
     
     lrc=$next_lrc
     s_value=$((s_value + 1))
 done
 
-# Stage 6: Zero mask ratio
-# CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-#         --trainset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --testset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --batchsize=48 \
-#         --lr=$lr \
-#         --min_datasize=50000 \
-#         --epoch=500 \
-#         --mask_ratio=0.0 \
-#         --add_noise=5.0 \
-#         --resume_pretrain \
-#         --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.25--lrc=${lrc}--s$((s_value))" \
-#         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
-#         --patch_size 3 16 16 \
-#         --rescale 3 3 \
-#         --crop_size 80 80 \
-#         --psf_size 49 49 \
-#         --lrc=$next_lrc \
-#         --resume
-
-# Stage 7: Gradient accumulation
-# CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-#         --trainset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --testset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --batchsize=9 \
-#         --lr=$lr \
-#         --min_datasize=20000 \
-#         --epoch=50 \
-#         --mask_ratio=0.25 \
-#         --add_noise=1.0 \
-#         --resume_pretrain \
-#         --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=5.0--lp_tv=0.001--mask_ratio=0.0--lrc=${lrc}--s$((s_value+1))" \
-#         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
-#         --patch_size 3 16 16 \
-#         --rescale 3 3 \
-#         --crop_size 80 80 \
-#         --psf_size 49 49 \
-#         --lrc=$next_lrc \
-#         --not_resume_s1_opt \
-#         --accumulation_step=4
-
-# Stage 8: Extended training
-# CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-#         --trainset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --testset="../Data/BioSR/*/2D/gt/*.tif" \
-#         --batchsize=18 \
-#         --lr=$lr \
-#         --min_datasize=20000 \
-#         --epoch=2000 \
-#         --mask_ratio=0.75 \
-#         --add_noise=1.0 \
-#         --resume_pretrain \
-#         --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--accumulation_step=4--lp_tv=0.001--mask_ratio=0.25--lrc=${lrc}--s$((s_value+2))" \
-#         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
-#         --patch_size 3 16 16 \
-#         --rescale 3 3 \
-#         --crop_size 80 80 \
-#         --psf_size 49 49 \
-#         --lrc=$next_lrc \
-#         --not_resume_s1_opt \
-#         --accumulation_step=4
-
-# Final stage: Production training
+# Stage 6: Extended training
 CUDA_VISIBLE_DEVICES=${gpu} python3 train.py \
-        --trainset="/data_nas/nas/Research/Datasets/BioSR/*/2D/train/*.tif" \
-        --testset="/data_nas/nas/Research/Datasets/BioSR/*/2D/test/*.tif" \
-        --batchsize=9 \
+        --trainset="./data/BioSR/*/2D/gt/*.tif" \
+        --testset="./data/BioSR/*/2D/gt/*.tif" \
+        --batchsize=18 \
         --lr=$lr \
         --min_datasize=20000 \
-        --epoch=100 \
-        --mask_ratio=0.25 \
-        --add_noise=5 \
+        --epoch=2000 \
+        --mask_ratio=0.75 \
+        --add_noise=1.0 \
         --resume_pretrain \
-        --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--accumulation_step=4--lp_tv=0.001--mask_ratio=0.75--lrc=32--s8" \
+        --resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.25--lrc=${lrc}--s5" \
         --save_dir="./ckpt/adapter/2D_BioSR/comb_3x" \
         --patch_size 3 16 16 \
         --rescale 3 3 \
         --crop_size 80 80 \
         --psf_size 49 49 \
         --lrc=$next_lrc \
-        --not_resume_s1_opt \
-        --accumulation_step=4
+        --not_resume_s1_opt

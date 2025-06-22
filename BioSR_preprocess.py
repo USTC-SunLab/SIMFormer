@@ -8,7 +8,7 @@ import numpy as np
 import tqdm
 
 # Set BioSR dataset path
-BIOSR_PATH = "/root/data/BioSR"
+BIOSR_PATH = "path to BioSR"
 
 for TASK in ["CCPs", "Microtubules", "F-actin"]:
     if TASK == "CCPs":

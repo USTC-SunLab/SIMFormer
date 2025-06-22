@@ -464,7 +464,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn')
     
     parser = argparse.ArgumentParser(description='Generate SIM simulation data and save to local directories')
-    parser.add_argument('--output_prefix', type=str, default='../data/SIM-simulation', help='Output directory prefix')
+    parser.add_argument('--output_prefix', type=str, default='./data/SIM-simulation', help='Output directory prefix')
     
     args = parser.parse_args()
     

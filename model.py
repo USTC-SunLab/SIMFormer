@@ -97,12 +97,7 @@ def center_loss(img):
 def compute_metrics(x, state, params, args, rng, train=True):
     rng1, rng2, rng3, rng4 = jax.random.split(rng, 4)
     
-    # Use remat (gradient checkpointing) to save memory if requested
-    apply_fn = state.apply_fn
-    if train and args.use_remat:
-        apply_fn = jax.remat(state.apply_fn)
-    
-    result, updates = apply_fn({'params': params, 'batch_stats': state.batch_stats}, x, args, train, rngs={'dropout': rng2, "random_masking": rng3, "drop_path": rng4}, mutable=['batch_stats'])
+    result, updates = state.apply_fn({'params': params, 'batch_stats': state.batch_stats}, x, args, train, rngs={'dropout': rng2, "random_masking": rng3, "drop_path": rng4}, mutable=['batch_stats'])
     
     if train and args.mask_ratio > 0.3:
         rec = rec_loss(result["x_real"], result["rec_real"], result["mask"]).mean()
@@ -127,25 +122,17 @@ def pipeline(args, writer):
     # data
     patch_size_z = args.patch_size[0] if len(args.patch_size) > 2 else 1
     train_set = dataset_3d(args.trainset, args.crop_size, minimum_number=args.min_datasize, 
-                          patch_size_z=patch_size_z, adapt_z_dimension=args.adapt_z_dimension, 
-                          target_z_frames=args.target_z_frames, random_z_sampling=args.random_z_sampling)
+                          patch_size_z=patch_size_z, adapt_pattern_dimension=args.adapt_pattern_dimension, 
+                          target_pattern_frames=args.target_pattern_frames, random_pattern_sampling=args.random_pattern_sampling)
     trainloader = DataLoader(train_set, batch_size=args.batchsize, shuffle=True, num_workers=0, drop_last=True, worker_init_fn=worker_init_fn)
 
     test_set = dataset_3d(args.testset, args.crop_size, use_gt=args.use_gt, minimum_number=args.batchsize*2, 
                          sampling_rate=args.sampling_rate, patch_size_z=patch_size_z, 
-                         adapt_z_dimension=args.adapt_z_dimension, target_z_frames=args.target_z_frames, random_z_sampling=args.random_z_sampling)
+                         adapt_pattern_dimension=args.adapt_pattern_dimension, target_pattern_frames=args.target_pattern_frames, random_pattern_sampling=args.random_pattern_sampling)
     testloader = DataLoader(test_set, batch_size=args.batchsize, shuffle=True, num_workers=0, drop_last=True, worker_init_fn=worker_init_fn)
 
     x_exp = get_sample(trainloader)
     print("Tensor shape:", x_exp.shape)
-
-    # Set mixed precision policy if requested
-    if args.use_mp:
-        print("\033[92m", "Using mixed precision training (bfloat16)", "\033[0m")
-        jax.config.update("jax_default_matmul_precision", "bfloat16")
-        dtype = jnp.bfloat16
-    else:
-        dtype = jnp.float32
 
     def net_model():
         image_size = [x_exp.shape[2], args.crop_size[0] * args.rescale[0], args.crop_size[1] * args.rescale[1]]
@@ -459,13 +446,13 @@ def pipeline(args, writer):
 def pipeline_supervised(args):
     # data
     train_set = dataset_3d(args.trainset, args.crop_size, minimum_number=args.min_datasize,
-                          adapt_z_dimension=args.adapt_z_dimension, target_z_frames=args.target_z_frames,
-                          random_z_sampling=args.random_z_sampling)
+                          adapt_pattern_dimension=args.adapt_pattern_dimension, target_pattern_frames=args.target_pattern_frames,
+                          random_pattern_sampling=args.random_pattern_sampling)
     trainloader = DataLoader(train_set, batch_size=args.batchsize, shuffle=True, num_workers=0, drop_last=True)
 
     test_set = dataset_3d(args.testset, args.crop_size, use_gt=args.use_gt, sampling_rate=0.1,
-                         adapt_z_dimension=args.adapt_z_dimension, target_z_frames=args.target_z_frames,
-                         random_z_sampling=args.random_z_sampling)
+                         adapt_pattern_dimension=args.adapt_pattern_dimension, target_pattern_frames=args.target_pattern_frames,
+                         random_pattern_sampling=args.random_pattern_sampling)
     testloader = DataLoader(test_set, batch_size=args.batchsize, shuffle=True, num_workers=0, drop_last=True)
 
     x_exp = get_sample(trainloader)
@@ -546,8 +533,8 @@ def pipeline_infer(args):
         
         patch_size_z = args.patch_size[0] if len(args.patch_size) > 2 else 1
         test_set = dataset_3d_infer(img, args.crop_size, args.rescale, patch_size_z=patch_size_z,
-                                   adapt_z_dimension=args.adapt_z_dimension, target_z_frames=args.target_z_frames,
-                                   random_z_sampling=args.random_z_sampling)
+                                   adapt_pattern_dimension=args.adapt_pattern_dimension, target_pattern_frames=args.target_pattern_frames,
+                                   random_pattern_sampling=args.random_pattern_sampling)
         test_dataloader = DataLoader(test_set, batch_size=args.batchsize, shuffle=False, num_workers=0, pin_memory=False, drop_last=False)
         pbar = tqdm.tqdm(test_dataloader)
         for x, patch_index in pbar:

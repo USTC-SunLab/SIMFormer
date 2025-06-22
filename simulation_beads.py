@@ -14,7 +14,7 @@ from simulation_np import (
     circular_blur
 )
 
-def generate_beads(num_points, W, radius=3):
+def generate_beads(num_points, W, radius=1):
     """Generate random beads - standalone implementation"""
     num_points = max(1, int(round(num_points)))
     W = int(W)
@@ -78,6 +78,10 @@ def generate_beads_sim(params):
     save_tiff_imagej_compatible(f"{train_gt_path}/0.tif", beads.astype(np.float32), "YX")
     save_tiff_imagej_compatible(f"{train_gt_path}/0_lp.tif", patterns.astype(np.float32), "CZYX")
     
+    # Save PSF to parent directory for model evaluation
+    psf_path = os.path.join(params['output_dir'], '..', 'psf.tif')
+    save_tiff_imagej_compatible(psf_path, psf.astype(np.float32), "CYX")
+    
     # Save config
     import json
     config = {
@@ -103,10 +107,10 @@ def generate_beads_sim(params):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate beads SIM dataset')
-    parser.add_argument('--num_beads', type=int, default=100, help='Number of beads')
-    parser.add_argument('--radius', type=int, default=3, help='Bead radius in pixels')
+    parser.add_argument('--num_beads', type=int, default=1000, help='Number of beads')
+    parser.add_argument('--radius', type=int, default=1, help='Bead radius in pixels')
     parser.add_argument('--size', type=int, default=256, help='Image size')
-    parser.add_argument('--output_dir', type=str, default='./data/SIM-simulation/beads', help='Output directory')
+    parser.add_argument('--output_dir', type=str, default='./data/SIM-simulation/beads/standard', help='Output directory')
     parser.add_argument('--period', type=float, default=5, help='SIM pattern period')
     parser.add_argument('--noise', type=float, default=0.1, help='Noise level')
     parser.add_argument('--photons', type=int, default=1000, help='Average photon count')
