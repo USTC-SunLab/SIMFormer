@@ -478,8 +478,8 @@ if __name__ == "__main__":
     radius = [3, 4]
     output_prefix = args.output_prefix
     W = 256
-    bs_train = 1
-    bs_test = 1
+    bs_train = 10
+    bs_test = 10
     
     # CURVE
     savedir = f'{output_prefix}/curve'
