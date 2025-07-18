@@ -18,7 +18,7 @@ testset="./data/SIM-simulation/*/*/*/test/*.tif"
 simformer_infer_save_dir="./results/SIM-simulation"
 
 # Path to pre-trained SIMFormer checkpoint
-resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.25--lrc=32--s7"
+resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/mask_ratio=0.25--add_noise=1.0--lr=0.0001--lrc=32--lp_tv=0.001--s7"
 
 # Single-stage distillation for simulated data
 echo "Distillation training on simulated data"

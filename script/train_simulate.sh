@@ -48,7 +48,7 @@ while [ $lrc -gt $end_lrc ]; do
             --mask_ratio=0.25 \
             --add_noise=1.0 \
             --resume_pretrain \
-            --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=${mask_ratio}--lrc=${lrc}--s${s_value}" \
+            --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/mask_ratio=${mask_ratio}--add_noise=1.0--lr=0.0001--lrc=${lrc}--lp_tv=0.001--s${s_value}" \
             --save_dir="./ckpt/adapter/SIM-simulation/comb_3x" \
             --patch_size 3 16 16 \
             --rescale 3 3 \
@@ -75,7 +75,7 @@ CUDA_VISIBLE_DEVICES=${gpu} python train.py \
         --mask_ratio=0.75 \
         --add_noise=1.0 \
         --resume_pretrain \
-        --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.25--lrc=${lrc}--s5" \
+        --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/mask_ratio=0.25--add_noise=1.0--lr=0.0001--lrc=${lrc}--lp_tv=0.001--s5" \
         --save_dir="./ckpt/adapter/SIM-simulation/comb_3x" \
         --patch_size 3 16 16 \
         --rescale 3 3 \
@@ -96,7 +96,7 @@ CUDA_VISIBLE_DEVICES=${gpu} python train.py \
         --mask_ratio=0.25 \
         --add_noise=1.0 \
         --resume_pretrain \
-        --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.75--lrc=${lrc}--s6" \
+        --resume_s1_path="./ckpt/adapter/SIM-simulation/comb_3x/mask_ratio=0.75--add_noise=1.0--lr=0.0001--lrc=${lrc}--lp_tv=0.001--s6" \
         --save_dir="./ckpt/adapter/SIM-simulation/comb_3x" \
         --patch_size 3 16 16 \
         --rescale 3 3 \

@@ -18,7 +18,7 @@ testset="./data/BioSR/*/2D/test/*.tif"
 simformer_infer_save_dir="./results/BioSR"
 
 # Path to pre-trained SIMFormer checkpoint for initialization
-resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/lr=0.0001--add_noise=1.0--lp_tv=0.001--mask_ratio=0.75--lrc=32--s6"
+resume_s1_path="./ckpt/adapter/2D_BioSR/comb_3x/mask_ratio=0.75--add_noise=1.0--lr=0.0001--lrc=32--lp_tv=0.001--s6"
 
 # Distillation training
 CUDA_VISIBLE_DEVICES=${gpu} python train_distillation.py \
